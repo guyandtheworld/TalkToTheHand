@@ -9,7 +9,8 @@ class HandRecognise(object):
         while(1):
             _, frame = self.cap.read()
             grayscale = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            cv2.imshow('hsv', grayscale)
+            print(grayscale)
+            cv2.imshow('gray', grayscale)
             k = cv2.waitKey(5) & 0xFF
             if k == 27:
                 break
