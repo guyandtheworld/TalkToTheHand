@@ -1,7 +1,6 @@
 import cv2
 import glob
 import numpy as np
-import time
 import tensorflow as tf
 
 class PD(object):
@@ -11,11 +10,11 @@ class PD(object):
 
     def process(self):
         print("Starting...")
-        time.sleep(2)
         for img in glob.glob("data/*"):
             picture = cv2.imread(img)
-            gray = cv2.cvtColor(picture, cv2.COLOR_BGR2GRAY)
-            self.gray_scale.append(gray)
+            gray = np.array(cv2.cvtColor(picture, cv2.COLOR_BGR2GRAY))
+            flattened = gray.flatten()
+            self.gray_scale.append(flattened)
 
     def gd(self):
         features = np.array(self.gray_scale)
