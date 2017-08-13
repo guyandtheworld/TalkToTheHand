@@ -2,8 +2,9 @@ import cv2
 import glob
 import numpy as np
 import tensorflow as tf
+import random
 
-class PD(object):
+class LoadData(object):
     def __init__(self, file_dir):
         self.gray_scale = []
         self.file_dir = file_dir
@@ -22,16 +23,26 @@ class PD(object):
         labels = np.array([label[self.file_dir]]*len(self.gray_scale))
         return (features, labels)
 
-class TF(object):
+class GetTrainingData(object):
     def __init__(self): 
-        true_case = PD("TRUE").gd()
-        false_case = PD("FALSE").gd()
-        self.mix(true_case, false_case)
+        self.true_case = LoadData("TRUE").gd()
+        self.false_case = LoadData("FALSE").gd()
 
-    def mix(self, true_case, false_case):
-        print(len(true_case[0]), len(false_case[0].shape))
-        # for i, j in zip(true_case[0], false_case[0]):
-        #     print(i, j)
-        # features = np.concatenate((true_case[0], false_case[0])) 
-        # labels = np.concatenate(true_case[1], false_case[1])
-        # return features, labels
+    def mix(self):
+        true_case = self.true_case
+        false_case = self.false_case
+        features = []
+        labels = []
+        for i, j in zip(true_case[0], true_case[1]):
+            features.append(i)
+            labels.append(j)
+        for i, j in zip(false_case[0], false_case[1]):
+            features.append(i)
+            labels.append(j)
+        features = np.array(features)
+        labels = np.array(labels)
+        c = list(zip(features, labels))
+        random.shuffle(c)
+        features, labels = zip(*c)
+        train = features, labels
+        return train
