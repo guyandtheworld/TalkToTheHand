@@ -22,7 +22,7 @@ class LoadData(object):
     def getdata(self):
         label = {"TRUE":1, "FALSE":0}
         features = np.array(self.gray_scale)
-        labels = np.array([label[self.file_dir]]*len(self.gray_scale))
+        labels = np.array([np.array([label[self.file_dir]])]*len(self.gray_scale))
         return (features, labels)
 
 
@@ -76,10 +76,20 @@ class Classifier(object):
         init = tf.global_variables_initializer()
         with tf.Session() as sess:
             sess.run(init)
-        instance = GetTrainingData()
-        training_data = instance.mix()
-        for x, y in zip(training_data[0], training_data[1]):
-            print(len(x), y)
+            instance = GetTrainingData()
+            training_data = instance.mix()
+            m = len(training_data[0])
+            cost = 0
+            for x_i, y_i in zip(training_data[0], training_data[1]):
+                x_t = np.array([x_i])
+                y_t = np.array([y_i])
+                print(x_t.shape, y_t.shape)
+                sess.run(self.optimizer, feed_dict={self.x: x_i, self.y: y_i})
+                cost += sess.run(self.cost_function, feed_dict = {self.x: x_i, self.y: y_i})
+                print(cost)
+            # avg_cost = cost/m
+            # print(avg_cost)
+
 
 a = Classifier()
 a.train()
