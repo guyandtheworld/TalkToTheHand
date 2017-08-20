@@ -26,12 +26,12 @@ class LoadData(object):
         return (features, labels)
 
 
-class GetTrainingData(object):
+class Data(object):
     def __init__(self): 
         self.true_case = LoadData("TRUE").getdata()
         self.false_case = LoadData("FALSE").getdata()
 
-    def mix(self):
+    def train(self):
         true_case = self.true_case
         false_case = self.false_case
         features = []
@@ -73,23 +73,21 @@ class Classifier(object):
             self.optimizer = tf.train.GradientDescentOptimizer(self.learning_rate).minimize(self.cost_function)
 
     def train(self):
+        train_data = Data().train()
+        print(len(train_data[0]))
         init = tf.global_variables_initializer()
         with tf.Session() as sess:
             sess.run(init)
-            instance = GetTrainingData()
-            training_data = instance.mix()
-            m = len(training_data[0])
-            cost = 0
-            for x_i, y_i in zip(training_data[0], training_data[1]):
-                x_t = np.array([x_i])
-                y_t = np.array([y_i])
-                print(x_t.shape, y_t.shape)
-                sess.run(self.optimizer, feed_dict={self.x: x_i, self.y: y_i})
-                cost += sess.run(self.cost_function, feed_dict = {self.x: x_i, self.y: y_i})
-                print(cost)
-            # avg_cost = cost/m
-            # print(avg_cost)
-
+            for i in range(10):
+                avg_cost = 0.
+                total_batch = 5
+                for j in range(0, 367, 5):
+                    xs = np.array(train_data[0][j:j+5])
+                    ys = train_data[1][j:j+5]
+                    sess.run(self.optimizer, feed_dict={self.x: xs, self.y: ys})
+                    avg_cost += sess.run(self.cost_function, feed_dict={self.x: xs, self.y: ys})/5
+                    # print(avg_cost)
+                    print ("Iteration:", '%04d' % (i + 1), "cost=", "{:.9f}".format(avg_cost))
 
 a = Classifier()
 a.train()
