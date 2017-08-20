@@ -20,9 +20,9 @@ class LoadData(object):
             self.gray_scale.append(flattened)
 
     def getdata(self):
-        label = {"TRUE":1, "FALSE":0}
+        label = {"TRUE":[1,0], "FALSE":[0, 1]}
         features = np.array(self.gray_scale)
-        labels = np.array([np.array([label[self.file_dir]])]*len(self.gray_scale))
+        labels = np.array([label[self.file_dir]]*len(self.gray_scale))
         return (features, labels)
 
 
@@ -58,23 +58,24 @@ class Classifier(object):
         self.display_set = 1
 
         self.x = tf.placeholder("float", [None, 3596])
-        self.y = tf.placeholder("float", [None, 1])
+        self.y = tf.placeholder("float", [None, 2])
 
-        self.W = tf.Variable(tf.zeros([3596, 1]))
-        self.b = tf.Variable(tf.zeros([1]))
+        self.W = tf.Variable(tf.zeros([3596, 2]))
+        self.b = tf.Variable(tf.zeros([2]))
 
         with tf.name_scope("Wx_b") as scope:
             self.model = tf.nn.softmax(tf.matmul(self.x, self.W) + self.b)
 
         with tf.name_scope("cost_function") as scope:
-            self.cost_function = -tf.reduce_sum(self.y*tf.log(self.model))
+            self.cost_function = -tf.reduce_sum(self.y*tf.log(tf.clip_by_value(self.model,1e-10,1.0)))
 
         with tf.name_scope("scope") as scope:
             self.optimizer = tf.train.GradientDescentOptimizer(self.learning_rate).minimize(self.cost_function)
 
     def train(self):
         train_data = Data().train()
-        print(len(train_data[0]))
+        print(train_data[1])
+
         init = tf.global_variables_initializer()
         with tf.Session() as sess:
             sess.run(init)
@@ -86,7 +87,6 @@ class Classifier(object):
                     ys = train_data[1][j:j+5]
                     sess.run(self.optimizer, feed_dict={self.x: xs, self.y: ys})
                     avg_cost += sess.run(self.cost_function, feed_dict={self.x: xs, self.y: ys})/5
-                    # print(avg_cost)
                     print ("Iteration:", '%04d' % (i + 1), "cost=", "{:.9f}".format(avg_cost))
 
 a = Classifier()
