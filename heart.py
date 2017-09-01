@@ -21,15 +21,21 @@ class LoadData(object):
 
     def getdata(self):
         label = {"TRUE":[1,0], "FALSE":[0, 1]}
+        if self.file_dir == "P_TRUE" or self.file_dir == "P_FALSE":
+            self.file_dir = self.file_dir.split("_")[1]
         features = np.array(self.gray_scale)
         labels = np.array([label[self.file_dir]]*len(self.gray_scale))
         return (features, labels)
 
 
 class Data(object):
-    def __init__(self): 
-        self.true_case = LoadData("TRUE").getdata()
-        self.false_case = LoadData("FALSE").getdata()
+    def __init__(self, ttype):
+        if ttype == "Train":
+            self.true_case = LoadData("TRUE").getdata()
+            self.false_case = LoadData("FALSE").getdata()
+        elif ttype == "Predict":
+            self.true_case = LoadData("P_TRUE").getdata()
+            self.false_case = LoadData("P_FALSE").getdata()
 
     def train(self):
         true_case = self.true_case
@@ -49,10 +55,27 @@ class Data(object):
         features, labels = zip(*c)
         return (features, labels)
 
+    def predict(self):
+        true_case = self.true_case
+        false_case = self.false_case
+        features = []
+        labels = []
+        for i, j in zip(true_case[0], true_case[1]):
+            features.append(i)
+            labels.append(j)
+        for i, j in zip(false_case[0], false_case[1]):
+            features.append(i)
+            labels.append(j)
+        features = np.array(features)
+        labels = np.array(labels)
+        c = list(zip(features, labels))
+        random.shuffle(c)
+        features, labels = zip(*c)
+        return (features, labels)
 
 class Classifier(object):
     def __init__(self):
-        self.learning_rate = 0.01
+        self.learning_rate = 0.001
         self.training_iterations = 30
         self.batch_size = 10
         self.display_set = 1
@@ -68,13 +91,11 @@ class Classifier(object):
 
         with tf.name_scope("cost_function") as scope:
             self.cost_function = -tf.reduce_sum(self.y*tf.log(tf.clip_by_value(self.model,1e-10,1.0)))
-
         with tf.name_scope("scope") as scope:
             self.optimizer = tf.train.GradientDescentOptimizer(self.learning_rate).minimize(self.cost_function)
 
     def train(self):
-        train_data = Data().train()
-        print(train_data[1])
+        train_data = Data("Train").train()
 
         init = tf.global_variables_initializer()
         with tf.Session() as sess:
@@ -88,6 +109,11 @@ class Classifier(object):
                     sess.run(self.optimizer, feed_dict={self.x: xs, self.y: ys})
                     avg_cost += sess.run(self.cost_function, feed_dict={self.x: xs, self.y: ys})/5
                     print ("Iteration:", '%04d' % (i + 1), "cost=", "{:.9f}".format(avg_cost))
+
+            train_data = Data("Predict").train()
+            predictions = tf.equal(tf.argmax(self.model, 1), tf.argmax(self.y, 1))
+            accuracy = tf.reduce_mean(tf.cast(predictions, "float"))
+            print("Accuracy: ", accuracy.eval({self.x: train_data[0], self.y: train_data[1]}))
 
 a = Classifier()
 a.train()
