@@ -83,14 +83,14 @@ class Classifier(object):
         self.x = tf.placeholder("float", [None, 3596])
         self.y = tf.placeholder("float", [None, 2])
 
-        W1 = tf.Variable(tf.truncated_normal([3596, 2], stddev=0.1))
-        b1 = tf.Variable(tf.zeros([2]))
-        # W2 = tf.Variable(tf.truncated_normal([800, 2], stddev=0.1))
-        # b2 = tf.Variable(tf.zeros([2]))
+        W1 = tf.Variable(tf.truncated_normal([3596, 800], stddev=0.1))
+        b1 = tf.Variable(tf.zeros([800]))
+        W2 = tf.Variable(tf.truncated_normal([800, 2], stddev=0.1))
+        b2 = tf.Variable(tf.zeros([2]))
 
         with tf.name_scope("Wx_b") as scope:
-            # Y1 = tf.nn.sigmoid(tf.matmul(self.x, W1) + b1)
-            self.model = tf.nn.softmax(tf.matmul(self.x, W1)+b1)
+            Y1 = tf.nn.sigmoid(tf.matmul(self.x, W1) + b1)
+            self.model = tf.nn.softmax(tf.matmul(Y1, W2)+b2)
 
         with tf.name_scope("cost_function") as scope:
             self.cost_function = -tf.reduce_sum(self.y*tf.log(tf.clip_by_value(self.model,1e-10,1.0)))
@@ -114,10 +114,12 @@ class Classifier(object):
                     avg_cost += sess.run(self.cost_function, feed_dict={self.x: xs, self.y: ys})/5
                     print ("Iteration:", '%04d' % (i + 1), "cost=", "{:.9f}".format(avg_cost))
 
+            saver = tf.train.Saver()
+            saver.save(sess, 'TF_Model/cv_model', global_step=1000)
             train_data = Data("Predict").train()
             predictions = tf.equal(tf.argmax(self.model, 1), tf.argmax(self.y, 1))
             accuracy = tf.reduce_mean(tf.cast(predictions, "float"))
             print("Accuracy: ", accuracy.eval({self.x: train_data[0], self.y: train_data[1]}))
 
-# a = Classifier()
-# a.train()
+c = Classifier()
+c.train()
